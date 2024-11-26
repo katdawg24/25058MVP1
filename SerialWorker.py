@@ -27,8 +27,25 @@ class SerialWorker(QThread):
                     values = [float(x) for x in data.split()]
                     self.data_received.emit(values)  # Emit the signal with new data
             ser.close()
-        except serial.SerialException as e:
-            print(f"Error: {e}")
+        except serial.SerialException as e:print(f"Error: {e}")
+        # finally:
+        #     if hasattr(self, 'ser') and self.ser.is_open:
+        #         self.ser.close() 
+
+
+    def send_data(self, data):
+        if self.running and hasattr(self, 'ser') and self.ser.is_open:
+            try:
+                self.ser.write(data.encode('utf-8'))  # Send data as bytes
+            except serial.SerialException as e:
+                print(f"Error sending data: {e}")
+        else:
+            if not self.running:
+                print("Cannot send data: The thread is not running.")
+            elif not hasattr(self, 'ser'):
+                print("Cannot send data: Serial connection ('ser') is not initialized.")
+            elif not self.ser.is_open:
+                print("Cannot send data: Serial port is not open.")
 
     def stop(self):
         self.running = False

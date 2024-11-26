@@ -14,6 +14,7 @@ import pyqtgraph as pg
 
 import SerialWorker
 import TempDialog
+import DistanceDialog
 
 
 class Ui_MainWindow(object):
@@ -34,6 +35,7 @@ class Ui_MainWindow(object):
         self.motor_speed_slider.setGeometry(QtCore.QRect(260, 610, 611, 31))
         self.motor_speed_slider.setOrientation(QtCore.Qt.Horizontal)
         self.motor_speed_slider.setObjectName("motor_speed_slider")
+        self.motor_speed_slider.valueChanged.connect(self.update_motor_speed)
         self.label = QtWidgets.QLabel(self.centralwidget)
         self.label.setGeometry(QtCore.QRect(490, 560, 151, 31))
         font = QtGui.QFont()
@@ -61,9 +63,10 @@ class Ui_MainWindow(object):
         self.temp_menu_button.setObjectName("temp_menu_button")
         self.temp_menu_button.clicked.connect(self.openTempMenu)
 
-        self.surface_menu_button = QtWidgets.QPushButton(self.centralwidget)
-        self.surface_menu_button.setGeometry(QtCore.QRect(710, 420, 231, 51))
-        self.surface_menu_button.setObjectName("surface_menu_button")
+        self.distance_menu_button = QtWidgets.QPushButton(self.centralwidget)
+        self.distance_menu_button.setGeometry(QtCore.QRect(710, 420, 231, 51))
+        self.distance_menu_button.setObjectName("distance_menu_button")
+        self.distance_menu_button.clicked.connect(self.openDistanceMenu)
 
         self.motor_menu_button = QtWidgets.QPushButton(self.centralwidget)
         self.motor_menu_button.setGeometry(QtCore.QRect(450, 660, 241, 51))
@@ -134,6 +137,7 @@ class Ui_MainWindow(object):
         self.serial_thread.start()
 
         self.temp_window = None
+        self.distance_window = None
 
         self.retranslateUi(MainWindow)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
@@ -153,12 +157,12 @@ class Ui_MainWindow(object):
         self.label_2.setText(_translate("MainWindow", "Temperature"))
         self.label_3.setText(_translate("MainWindow", "Depth"))
         self.temp_menu_button.setText(_translate("MainWindow", "Temperature Details"))
-        self.surface_menu_button.setText(_translate("MainWindow", "Surface Details"))
+        self.distance_menu_button.setText(_translate("MainWindow", "Distance Details"))
         self.motor_menu_button.setText(_translate("MainWindow", "Manage Motor"))
 
     def update_plot(self, data):
         #Move least recent reading off graph
-        if (len(self.time) > 9):
+        if (len(self.time) > 19):
             self.time = self.time[1:]
             self.temperature = self.temperature[1:]
             self.distance = self.distance[1:]
@@ -179,13 +183,33 @@ class Ui_MainWindow(object):
         self.temp_display.display(self.temperature[-1])
         self.depth_display.display(self.distance[-1])
 
-        # if self.temp_window:
-        #     self.temp_window.update_chart_data(data)
+        if self.temp_window:
+            
+            self.temp_window.update_chart_data(data)
+
+        if self.distance_window:
+            
+            self.distance_window.update_chart_data(data)
+
+    def update_motor_speed(self, value):
+        # Send motor speed value to Arduino
+        if self.serial_thread:
+            speed_data = f"SPEED {value}\n"
+            self.serial_thread.send_data(speed_data)  # Send data via SerialWorker
 
     def openTempMenu(self):
-        if not self.temp_window:
+        
             self.temp_window = TempDialog.Ui_TempDetails()
             self.serial_thread.data_received.connect(self.temp_window.update_chart_data)
+            self.serial_thread.data_received.connect(self.temp_window.update_table)
+
+        
+
+    def openDistanceMenu(self):
+        
+            self.distance_window = DistanceDialog.Ui_DistanceDetails()
+            self.serial_thread.data_received.connect(self.distance_window.update_chart_data)
+            self.serial_thread.data_received.connect(self.distance_window.update_table)
 
     def closeEvent(self, event):
         self.serial_thread.stop()
