@@ -15,6 +15,7 @@ import pyqtgraph as pg
 import SerialWorker
 import TempDialog
 import DistanceDialog
+import pandas as pd
 
 
 class Ui_MainWindow(object):
@@ -132,6 +133,7 @@ class Ui_MainWindow(object):
         self.statusbar.setObjectName("statusbar")
         MainWindow.setStatusBar(self.statusbar)
 
+        self.df = pd.DataFrame(columns= ["Time", "Temp", "Distance"])
         self.serial_thread = SerialWorker.SerialWorker('COM3', 9600)  # Replace with your port and baudrate
         self.serial_thread.data_received.connect(self.update_plot)
         self.serial_thread.start()
@@ -141,14 +143,6 @@ class Ui_MainWindow(object):
 
         self.retranslateUi(MainWindow)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
-
-        #Timer to update plot
-        #self.timer = QtCore.QTimer()
-
-        #Change to change interval of updates
-        # self.timer.setInterval(300)
-        # self.timer.timeout.connect(self.update_plot)
-        # self.timer.start()
 
     def retranslateUi(self, MainWindow):  
         _translate = QtCore.QCoreApplication.translate
@@ -167,10 +161,7 @@ class Ui_MainWindow(object):
             self.temperature = self.temperature[1:]
             self.distance = self.distance[1:]
 
-        #Add most recent time of reading
-        # self.time.append(self.time[-1] + 1)
-        # self.temperature.append(self.temperature[-1] + ((randint(1, 19) - 10) * 0.1))
-        # self.distance.append(self.distance[-1] + ((randint(1, 19) - 10) * 0.1))
+        self.df.loc[len(self.df)] = [float(data[0]), float(data[1]), float(data[2])]
 
         self.time.append(float(data[0]))
         self.temperature.append(float(data[1]))
@@ -199,15 +190,14 @@ class Ui_MainWindow(object):
 
     def openTempMenu(self):
         
-            self.temp_window = TempDialog.Ui_TempDetails()
+            self.temp_window = TempDialog.Ui_TempDetails(self.df)
             self.serial_thread.data_received.connect(self.temp_window.update_chart_data)
             self.serial_thread.data_received.connect(self.temp_window.update_table)
 
         
-
     def openDistanceMenu(self):
         
-            self.distance_window = DistanceDialog.Ui_DistanceDetails()
+            self.distance_window = DistanceDialog.Ui_DistanceDetails(self.df)
             self.serial_thread.data_received.connect(self.distance_window.update_chart_data)
             self.serial_thread.data_received.connect(self.distance_window.update_table)
 

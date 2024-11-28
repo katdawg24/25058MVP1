@@ -14,10 +14,11 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 import sys
 import pyqtgraph as pg
 from PyQt5.QtGui import QStandardItem, QStandardItemModel
+import pandas as pd
 
 
 class Ui_TempDetails(object):
-    def setupUi(self, TempDetails):
+    def setupUi(self, TempDetails, df):
         TempDetails.setObjectName("TempDetails")
         TempDetails.resize(1050, 500)
 
@@ -47,16 +48,20 @@ class Ui_TempDetails(object):
         #self.detailed_temp_chart.addLegend()
         self.detailed_temp_chart.showGrid(x=True, y=True)
         self.detailed_temp_chart.setYRange(20, 40)
-        self.time = []
-        self.temperature = []
+        self.time = df['Time'].tolist()
+        self.temperature = df['Temp'].tolist()
         
-
         self.temp_line = self.detailed_temp_chart.plot(
             self.time,
             self.temperature,
             name="Temperature Sensor",
             pen=pen
         )
+
+        for index, row in df.iterrows():
+            self.tableView.setRowCount(self.tableView.rowCount() + 1)
+            self.tableView.setItem(self.tableView.rowCount() - 1, 0, QtWidgets.QTableWidgetItem(str(row['Time'])))
+            self.tableView.setItem(self.tableView.rowCount() - 1, 1, QtWidgets.QTableWidgetItem(str(row['Temp'])))
 
         # self.detailed_temp_chart = QtWidgets.QScrollArea(TempDetails)
         self.detailed_temp_chart.setGeometry(QtCore.QRect(20, 20, 720, 380))
@@ -81,10 +86,9 @@ class Ui_TempDetails(object):
     def closeWindow(self):
         self.TempDetails.hide()
 
-    def __init__(self):
+    def __init__(self, df):
         self.TempDetails = QtWidgets.QDialog()
-        
-        self.setupUi(self.TempDetails)
+        self.setupUi(self.TempDetails, df)
         self.TempDetails.show()
 
     def update_chart_data(self, data):

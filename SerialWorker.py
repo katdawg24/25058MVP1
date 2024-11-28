@@ -3,6 +3,7 @@ import time
 from PyQt5.QtCore import QThread, pyqtSignal
 from PyQt5.QtWidgets import QApplication, QMainWindow, QLabel, QVBoxLayout, QWidget
 import serial
+import pandas as pd
 
 class SerialWorker(QThread):
     data_received = pyqtSignal(list)  # Signal to send data to the GUI

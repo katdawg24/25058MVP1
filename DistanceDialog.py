@@ -17,7 +17,7 @@ from PyQt5.QtGui import QStandardItem, QStandardItemModel
 
 
 class Ui_DistanceDetails(object):
-    def setupUi(self, DistanceDetails):
+    def setupUi(self, DistanceDetails, df):
         DistanceDetails.setObjectName("DistanceDetails")
         DistanceDetails.resize(1050, 500)
 
@@ -46,9 +46,9 @@ class Ui_DistanceDetails(object):
         self.detailed_distance_chart.setLabel("bottom", "Time (min)", **styles)
         #self.detailed_distance_chart.addLegend()
         self.detailed_distance_chart.showGrid(x=True, y=True)
-        self.detailed_distance_chart.setYRange(20, 40)
-        self.time = []
-        self.distance = []
+        self.detailed_distance_chart.setYRange(320, 400)
+        self.time = df['Time'].tolist()
+        self.distance = df['Distance'].tolist()
         
 
         self.distance_line = self.detailed_distance_chart.plot(
@@ -57,6 +57,11 @@ class Ui_DistanceDetails(object):
             name="Distance Sensor",
             pen=pen
         )
+
+        for index, row in df.iterrows():
+            self.tableView.setRowCount(self.tableView.rowCount() + 1)
+            self.tableView.setItem(self.tableView.rowCount() - 1, 0, QtWidgets.QTableWidgetItem(str(row['Time'])))
+            self.tableView.setItem(self.tableView.rowCount() - 1, 1, QtWidgets.QTableWidgetItem(str(row['Distance'])))
 
         # self.detailed_distance_chart = QtWidgets.QScrollArea(DistanceDetails)
         self.detailed_distance_chart.setGeometry(QtCore.QRect(20, 20, 720, 380))
@@ -81,10 +86,10 @@ class Ui_DistanceDetails(object):
     def closeWindow(self):
         self.DistanceDetails.hide()
 
-    def __init__(self):
+    def __init__(self, df):
         self.DistanceDetails = QtWidgets.QDialog()
         
-        self.setupUi(self.DistanceDetails)
+        self.setupUi(self.DistanceDetails, df)
         self.DistanceDetails.show()
 
     def update_chart_data(self, data):
@@ -94,14 +99,14 @@ class Ui_DistanceDetails(object):
             self.distance = self.distance[1:]
 
         self.time.append(data[0])
-        self.distance.append(data[1])
+        self.distance.append(data[2])
 
         #Redraw line
         self.distance_line.setData(self.time, self.distance)
 
         
         if (math.floor(data[0]) - math.floor(self.last_time) > 0):
-            self.update_table_data(data[0], data[1])
+            self.update_table_data(data[0], data[2])
             
         self.last_time = data[0]
         
