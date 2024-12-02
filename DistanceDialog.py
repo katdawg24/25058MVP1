@@ -46,7 +46,7 @@ class Ui_DistanceDetails(object):
         self.detailed_distance_chart.setLabel("bottom", "Time (min)", **styles)
         #self.detailed_distance_chart.addLegend()
         self.detailed_distance_chart.showGrid(x=True, y=True)
-        self.detailed_distance_chart.setYRange(320, 400)
+        self.detailed_distance_chart.setYRange(4, 12)
         self.time = df['Time'].tolist()
         self.distance = df['Distance'].tolist()
         
@@ -105,8 +105,8 @@ class Ui_DistanceDetails(object):
         self.distance_line.setData(self.time, self.distance)
 
         
-        if (math.floor(data[0]) - math.floor(self.last_time) > 0):
-            self.update_table_data(data[0], data[2])
+        # if (math.floor(data[0]) - math.floor(self.last_time) > 0):
+        self.update_table_data(data[0], data[2])
             
         self.last_time = data[0]
         
@@ -131,16 +131,6 @@ class Ui_DistanceDetails(object):
             if self.table_model.rowCount() > 20:
                 self.table_model.removeRow(self.table_model.rowCount() - 1)
 
-        
-
-def distanceDialog(distanceData):
-
-    DistanceDetails = QtWidgets.QDialog()
-    ui = Ui_DistanceDetails()
-    
-    ui.setupUi(DistanceDetails)
-    
-    DistanceDetails.show()
     
 
 if __name__ == "__main__":

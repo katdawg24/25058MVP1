@@ -16,10 +16,11 @@ import SerialWorker
 import TempDialog
 import DistanceDialog
 import pandas as pd
+import sys
 
 
 class Ui_MainWindow(object):
-    def setupUi(self, MainWindow):
+    def setupUi(self, MainWindow, serialThread):
         MainWindow.setObjectName("MainWindow")
         MainWindow.resize(1108, 798)
         self.centralwidget = QtWidgets.QWidget(MainWindow)
@@ -84,7 +85,7 @@ class Ui_MainWindow(object):
         self.small_temp_chart.setLabel("bottom", "Time (min)", **styles)
         #self.small_temp_chart.addLegend()
         self.small_temp_chart.showGrid(x=True, y=True)
-        self.small_temp_chart.setYRange(17, 28)
+        self.small_temp_chart.setYRange(24, 32)
         # self.time = list(range(10))
         # self.temperature = [30 + ((randint(1, 19) - 10) * 0.1) for _ in range(10)]
 
@@ -106,11 +107,11 @@ class Ui_MainWindow(object):
         pen = pg.mkPen(color=(255,0,0))
         self.small_depth_chart.setTitle("Depth vs Time", color="k", size="15pt")
         styles = {"color": "red", "font-size": "10px"}
-        self.small_depth_chart.setLabel("left", "Distance (units)", **styles)
+        self.small_depth_chart.setLabel("left", "Distance (cm)", **styles)
         self.small_depth_chart.setLabel("bottom", "Time (min)", **styles)
         #self.small_depth_chart.addLegend()
         self.small_depth_chart.showGrid(x=True, y=True)
-        self.small_depth_chart.setYRange(325, 425)
+        self.small_depth_chart.setYRange(3, 12)
         
         #self.distance = [60 + ((randint(1, 19) - 10) * 0.1) for _ in range(10)]
         self.distance = []
@@ -134,10 +135,11 @@ class Ui_MainWindow(object):
         MainWindow.setStatusBar(self.statusbar)
 
         self.df = pd.DataFrame(columns= ["Time", "Temp", "Distance"])
-        self.serial_thread = SerialWorker.SerialWorker('COM3', 9600)  # Replace with your port and baudrate
-        self.serial_thread.data_received.connect(self.update_plot)
-        self.serial_thread.start()
+          # Replace with your port and baudrate
 
+        self.serial_thread = serialThread
+        self.serial_thread.data_received.connect(self.update_plot)
+        
         self.temp_window = None
         self.distance_window = None
 
@@ -204,11 +206,21 @@ class Ui_MainWindow(object):
     def closeEvent(self, event):
         self.serial_thread.stop()
         event.accept()
+
+    def __init__(self, serialThread):
+
+        self.app = QtWidgets.QApplication(sys.argv)
+        self.MainWindow = QtWidgets.QMainWindow()
+        
+        self.setupUi(self.MainWindow, serialThread)
+        self.MainWindow.show()
+        sys.exit(self.app.exec_())
+
         
 
         
 if __name__ == "__main__":
-    import sys
+    
     app = QtWidgets.QApplication(sys.argv)
     MainWindow = QtWidgets.QMainWindow()
     ui = Ui_MainWindow()

@@ -21,12 +21,26 @@ class SerialWorker(QThread):
         ser.flushInput()
         ser.setDTR(True)
 
+        value_set = []
+        avg_values = []
+
         try:
             while self.running:
                 if ser.in_waiting > 0:
-                    data = ser.readline().decode('utf-8').strip()
-                    values = [float(x) for x in data.split()]
-                    self.data_received.emit(values)  # Emit the signal with new data
+                    for i in range(3):
+                        data = ser.readline().decode('utf-8').strip()
+                        values = [float(x) for x in data.split()]
+                        value_set.append(values)
+                        
+                    for i in range(3):
+                        avg = (value_set[0][i] + value_set[1][i] + value_set[2][i]) / 3.0
+                        avg_values.append(round(avg, 2))
+                    
+                    print(avg_values)      
+                    value_set.clear()
+                    
+                    self.data_received.emit(avg_values)  # Emit the signal with new data
+                    avg_values.clear()  
             ser.close()
         except serial.SerialException as e:print(f"Error: {e}")
         # finally:
