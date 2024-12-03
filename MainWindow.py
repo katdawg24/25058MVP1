@@ -30,15 +30,20 @@ class Ui_MainWindow(object):
         self.temp_display = QtWidgets.QLCDNumber(self.centralwidget)
         self.temp_display.setGeometry(QtCore.QRect(190, 70, 201, 61))
         self.temp_display.setObjectName("temp_display")
+        self.motor_speed_display = QtWidgets.QLCDNumber(self.centralwidget)
+        self.motor_speed_display.setGeometry(QtCore.QRect(790, 590, 201, 61))
+        self.motor_speed_display.setObjectName("motor_speed_display")
 
 
         self.motor_speed_slider = QtWidgets.QSlider(self.centralwidget)
-        self.motor_speed_slider.setGeometry(QtCore.QRect(260, 610, 611, 31))
+        self.motor_speed_slider.setGeometry(QtCore.QRect(150, 610, 611, 31))
         self.motor_speed_slider.setOrientation(QtCore.Qt.Horizontal)
         self.motor_speed_slider.setObjectName("motor_speed_slider")
+        self.motor_speed_slider.setMinimum(0)
+        self.motor_speed_slider.setMaximum(100)
         self.motor_speed_slider.valueChanged.connect(self.update_motor_speed)
         self.label = QtWidgets.QLabel(self.centralwidget)
-        self.label.setGeometry(QtCore.QRect(490, 560, 151, 31))
+        self.label.setGeometry(QtCore.QRect(480, 540, 151, 31))
         font = QtGui.QFont()
         font.setFamily("Cambria")
         font.setPointSize(16)
@@ -69,10 +74,14 @@ class Ui_MainWindow(object):
         self.distance_menu_button.setObjectName("distance_menu_button")
         self.distance_menu_button.clicked.connect(self.openDistanceMenu)
 
-        self.motor_menu_button = QtWidgets.QPushButton(self.centralwidget)
-        self.motor_menu_button.setGeometry(QtCore.QRect(450, 660, 241, 51))
-        self.motor_menu_button.setObjectName("motor_menu_button")
+        self.motor_stop_button = QtWidgets.QPushButton(self.centralwidget)
+        self.motor_stop_button.setGeometry(QtCore.QRect(440, 680, 241, 51))
+        self.motor_stop_button.setObjectName("motor_stop_button")
 
+        self.close_button = QtWidgets.QPushButton(self.centralwidget)
+        self.close_button.setGeometry(QtCore.QRect(800, 700, 121, 31))
+        self.close_button.setObjectName("close_button")
+        self.close_button.clicked.connect(self.closeWindow)
         
 
         self.small_temp_chart = pg.PlotWidget(self.centralwidget)
@@ -152,7 +161,7 @@ class Ui_MainWindow(object):
         self.label_3.setText(_translate("MainWindow", "Depth"))
         self.temp_menu_button.setText(_translate("MainWindow", "Temperature Details"))
         self.distance_menu_button.setText(_translate("MainWindow", "Distance Details"))
-        self.motor_menu_button.setText(_translate("MainWindow", "Manage Motor"))
+        self.motor_stop_button.setText(_translate("MainWindow", "STOP MOTOR"))
 
     def update_plot(self, data):
         #Move least recent reading off graph
@@ -204,6 +213,9 @@ class Ui_MainWindow(object):
     def closeEvent(self, event):
         self.serial_thread.stop()
         event.accept()
+
+    def closeWindow(self):
+        sys.exit(app.exec_())
         
 
         
