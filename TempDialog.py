@@ -47,7 +47,7 @@ class Ui_TempDetails(object):
         self.detailed_temp_chart.setLabel("bottom", "Time (min)", **styles)
         #self.detailed_temp_chart.addLegend()
         self.detailed_temp_chart.showGrid(x=True, y=True)
-        self.detailed_temp_chart.setYRange(20, 40)
+        self.detailed_temp_chart.setYRange(24, 32)
         self.time = df['Time'].tolist()
         self.temperature = df['Temp'].tolist()
         
@@ -104,8 +104,8 @@ class Ui_TempDetails(object):
         self.temp_line.setData(self.time, self.temperature)
 
         
-        if (math.floor(data[0]) - math.floor(self.last_time) > 0):
-            self.update_table_data(data[0], data[1])
+        # if (math.floor(data[0]) - math.floor(self.last_time) > 0):
+        self.update_table_data(data[0], data[1])
             
         self.last_time = data[0]
         
@@ -130,16 +130,7 @@ class Ui_TempDetails(object):
             if self.table_model.rowCount() > 20:
                 self.table_model.removeRow(self.table_model.rowCount() - 1)
 
-        
 
-def TempDialog(tempData):
-
-    TempDetails = QtWidgets.QDialog()
-    ui = Ui_TempDetails()
-    
-    ui.setupUi(TempDetails)
-    
-    TempDetails.show()
     
 
 if __name__ == "__main__":
