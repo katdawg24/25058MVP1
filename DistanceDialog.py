@@ -46,7 +46,7 @@ class Ui_DistanceDetails(object):
         self.detailed_distance_chart.setLabel("bottom", "Time (min)", **styles)
         #self.detailed_distance_chart.addLegend()
         self.detailed_distance_chart.showGrid(x=True, y=True)
-        self.detailed_distance_chart.setYRange(4, 12)
+        self.detailed_distance_chart.setYRange(2, 20)
         self.time = df['Time'].tolist()
         self.distance = df['Distance'].tolist()
         
@@ -94,7 +94,7 @@ class Ui_DistanceDetails(object):
 
     def update_chart_data(self, data):
         #Move least recent reading off graph
-        if (len(self.time) > 9):
+        if (len(self.time) > 50):
             self.time = self.time[1:]
             self.distance = self.distance[1:]
 

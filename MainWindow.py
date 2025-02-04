@@ -11,6 +11,7 @@
 from random import randint
 from PyQt5 import QtCore, QtGui, QtWidgets
 import pyqtgraph as pg
+from PyQt5.QtCore import pyqtSignal
 
 import SerialWorker
 import TempDialog
@@ -20,7 +21,10 @@ import sys
 
 
 class Ui_MainWindow(object):
-    def setupUi(self, MainWindow, serialThread):
+    def setupUi(self, MainWindow, receiveSerialThread, sendSerialThread):
+        self.temp_cutoff = 30
+        self.distance_cutoff = 10000
+
         MainWindow.setObjectName("MainWindow")
         MainWindow.resize(1108, 798)
         self.centralwidget = QtWidgets.QWidget(MainWindow)
@@ -31,9 +35,15 @@ class Ui_MainWindow(object):
         self.temp_display = QtWidgets.QLCDNumber(self.centralwidget)
         self.temp_display.setGeometry(QtCore.QRect(190, 70, 201, 61))
         self.temp_display.setObjectName("temp_display")
-        self.motor_speed_display = QtWidgets.QLCDNumber(self.centralwidget)
-        self.motor_speed_display.setGeometry(QtCore.QRect(790, 590, 201, 61))
+        self.motor_speed_display = QtWidgets.QLabel(self.centralwidget)
+        self.motor_speed_display.setGeometry(QtCore.QRect(790, 590, 170, 51))
         self.motor_speed_display.setObjectName("motor_speed_display")
+
+        self.speed_font = QtGui.QFont()
+        self.speed_font.setFamily("Cambria")
+        self.speed_font.setPointSize(16)
+        self.motor_speed_display.setText("0%")
+        self.motor_speed_display.setFont(self.speed_font)
 
 
         self.motor_speed_slider = QtWidgets.QSlider(self.centralwidget)
@@ -42,7 +52,10 @@ class Ui_MainWindow(object):
         self.motor_speed_slider.setObjectName("motor_speed_slider")
         self.motor_speed_slider.setMinimum(0)
         self.motor_speed_slider.setMaximum(100)
+        self.motor_speed_slider.setValue(0)
         self.motor_speed_slider.valueChanged.connect(self.update_motor_speed)
+        
+        
         self.label = QtWidgets.QLabel(self.centralwidget)
         self.label.setGeometry(QtCore.QRect(480, 540, 151, 31))
         font = QtGui.QFont()
@@ -78,9 +91,10 @@ class Ui_MainWindow(object):
         self.motor_stop_button = QtWidgets.QPushButton(self.centralwidget)
         self.motor_stop_button.setGeometry(QtCore.QRect(440, 680, 241, 51))
         self.motor_stop_button.setObjectName("motor_stop_button")
+        self.motor_stop_button.clicked.connect(self.stopMotor)
 
         self.close_button = QtWidgets.QPushButton(self.centralwidget)
-        self.close_button.setGeometry(QtCore.QRect(800, 700, 121, 31))
+        self.close_button.setGeometry(QtCore.QRect(950, 740, 121, 31))
         self.close_button.setObjectName("close_button")
         self.close_button.clicked.connect(self.closeWindow)
         
@@ -146,8 +160,13 @@ class Ui_MainWindow(object):
         self.df = pd.DataFrame(columns= ["Time", "Temp", "Distance"])
           # Replace with your port and baudrate
 
-        self.serial_thread = serialThread
-        self.serial_thread.data_received.connect(self.update_plot)
+        self.receive_serial_thread = receiveSerialThread
+        self.receive_serial_thread.data_received.connect(self.update_plot)
+
+        self.send_serial_thread = sendSerialThread
+        self.send_serial_thread.send_setup()
+        
+        self.speed_change_signal = pyqtSignal(float)
         
         self.temp_window = None
         self.distance_window = None
@@ -164,6 +183,7 @@ class Ui_MainWindow(object):
         self.temp_menu_button.setText(_translate("MainWindow", "Temperature Details"))
         self.distance_menu_button.setText(_translate("MainWindow", "Distance Details"))
         self.motor_stop_button.setText(_translate("MainWindow", "STOP MOTOR"))
+        self.close_button.setText(_translate("MainWindow", "Quit"))
 
     def update_plot(self, data):
         #Move least recent reading off graph
@@ -173,6 +193,7 @@ class Ui_MainWindow(object):
             self.distance = self.distance[1:]
 
         self.df.loc[len(self.df)] = [float(data[0]), float(data[1]), float(data[2])]
+        self.checkCutoffValue(data)
 
         self.time.append(float(data[0]))
         self.temperature.append(float(data[1]))
@@ -193,41 +214,72 @@ class Ui_MainWindow(object):
             
             self.distance_window.update_chart_data(data)
 
+    def checkCutoffValue(self, data):
+        if (float(data[1]) >= float(self.temp_cutoff)):
+            self.stopMotor()
+        
+        if (float(data[2]) >= float(self.distance_cutoff)):
+            self.stopMotor()
+
+    def getCutoffValues(self):
+        return [self.temp_cutoff, self.distance_cutoff]
+    
+    def setTempCutoffValue(self, value):
+        self.temp_cutoff = float(value)
+
+    def setDistanceCutoffValue(self, value):
+        self.distance_cutoff = float(value)
+
     def update_motor_speed(self, value):
         # Send motor speed value to Arduino
-        if self.serial_thread:
-            speed_data = f"SPEED {value}\n"
-            self.serial_thread.send_data(speed_data)  # Send data via SerialWorker
+        self.motor_speed_display.setText(str(value) + "%")
+        if self.send_serial_thread:
+            speed_data = float(value) / 100
+            self.send_serial_thread.send_data(str(round(speed_data, 2)))
+            
 
     def openTempMenu(self):
         
-            self.temp_window = TempDialog.Ui_TempDetails(self.df)
-            self.serial_thread.data_received.connect(self.temp_window.update_chart_data)
-            self.serial_thread.data_received.connect(self.temp_window.update_table)
+            self.temp_window = TempDialog.Ui_TempDetails(self.df, self)
+            self.send_serial_thread.data_received.connect(self.temp_window.update_chart_data)
+            self.send_serial_thread.data_received.connect(self.temp_window.update_table)
 
         
     def openDistanceMenu(self):
         
             self.distance_window = DistanceDialog.Ui_DistanceDetails(self.df)
-            self.serial_thread.data_received.connect(self.distance_window.update_chart_data)
-            self.serial_thread.data_received.connect(self.distance_window.update_table)
+            self.send_serial_thread.data_received.connect(self.distance_window.update_chart_data)
+            self.send_serial_thread.data_received.connect(self.distance_window.update_table)
 
     def closeEvent(self, event):
         self.serial_thread.stop()
         event.accept()
+    
+    def stopMotor(self):
+        self.send_serial_thread.send_data("stop")
 
-    def __init__(self, serialThread):
+    def __init__(self, receiveSerialThread, sendSerialThread):
 
         self.app = QtWidgets.QApplication(sys.argv)
         self.MainWindow = QtWidgets.QMainWindow()
         
-        self.setupUi(self.MainWindow, serialThread)
+        self.setupUi(self.MainWindow, receiveSerialThread, sendSerialThread)
         self.MainWindow.show()
         sys.exit(self.app.exec_())
 
 
     def closeWindow(self):
-        sys.exit(app.exec_())
+        self.send_serial_thread.send_data("stop")
+
+        differences = self.df['Time'].diff()
+
+        # Calculate the average difference
+        print(differences.mean())
+
+        sys.exit(self.app.exec_())
+
+
+
         
 
         
@@ -235,7 +287,7 @@ if __name__ == "__main__":
     
     app = QtWidgets.QApplication(sys.argv)
     MainWindow = QtWidgets.QMainWindow()
-    ui = Ui_MainWindow()
+    ui = Ui_MainWindow(SerialWorker)
     ui.setupUi(MainWindow)
     MainWindow.show()
     sys.exit(app.exec_())

@@ -15,17 +15,37 @@ import sys
 import pyqtgraph as pg
 from PyQt5.QtGui import QStandardItem, QStandardItemModel
 import pandas as pd
+from PyQt5.QtCore import pyqtSignal
 
 
 class Ui_TempDetails(object):
-    def setupUi(self, TempDetails, df):
+    
+
+    def setupUi(self, TempDetails, df, mainWindow):
+        self.main_window = mainWindow
         TempDetails.setObjectName("TempDetails")
-        TempDetails.resize(1050, 500)
+        TempDetails.resize(1050, 600)
 
         self.temp_dialog_close_button = QtWidgets.QPushButton(TempDetails)
-        self.temp_dialog_close_button.setGeometry(QtCore.QRect(890, 450, 121, 31))
+        self.temp_dialog_close_button.setGeometry(QtCore.QRect(890, 500, 121, 31))
         self.temp_dialog_close_button.setObjectName("temp_dialog_close_button")
         self.temp_dialog_close_button.clicked.connect(self.closeWindow)
+
+        self.cutoff_value_label = QtWidgets.QLabel(TempDetails)
+        self.cutoff_value_label.setGeometry(QtCore.QRect(70, 420, 170, 51))
+        self.cutoff_value_label.setObjectName("cutoff_value_label")
+        self.cutoff_value_label.setText("Enter cutoff value:")
+
+        self.cutoff_input = QtWidgets.QLineEdit(TempDetails)
+        self.cutoff_input.setValidator(QtGui.QDoubleValidator(0.0,99.99,2))
+        self.cutoff_input.setText("35.00")
+        self.cutoff_input.setGeometry(QtCore.QRect(70, 480, 250, 50))
+        self.cutoff_input.setObjectName("cutoff_input")
+        
+        self.cutoff_input_button = QtWidgets.QPushButton(TempDetails)
+        self.cutoff_input_button.setGeometry(QtCore.QRect(500, 480, 200, 50))
+        self.cutoff_input_button.setObjectName("cutoff_input_button")
+        self.cutoff_input_button.clicked.connect(self.new_cutoff_value)
 
         self.tableView = QtWidgets.QTableWidget(TempDetails)
         self.tableView.setGeometry(QtCore.QRect(770, 20, 255, 380))
@@ -81,14 +101,18 @@ class Ui_TempDetails(object):
         _translate = QtCore.QCoreApplication.translate
         TempDetails.setWindowTitle(_translate("TempDetails", "Dialog"))
         self.temp_dialog_close_button.setText(_translate("TempDetails", "Close"))
+        self.cutoff_input_button.setText(_translate("TempDetails", "Change Cutoff"))
+        self.cutoff_input.setText(_translate("TempDetails", str(self.main_window.getCutoffValues()[0])))
 
 
     def closeWindow(self):
         self.TempDetails.hide()
 
-    def __init__(self, df):
+    def __init__(self, df, main_window):
+        super().__init__()
         self.TempDetails = QtWidgets.QDialog()
-        self.setupUi(self.TempDetails, df)
+        self.setupUi(self.TempDetails, df, main_window)
+        
         self.TempDetails.show()
 
     def update_chart_data(self, data):
@@ -130,13 +154,16 @@ class Ui_TempDetails(object):
             if self.table_model.rowCount() > 20:
                 self.table_model.removeRow(self.table_model.rowCount() - 1)
 
-
+    def new_cutoff_value(self):
+        self.main_window.setTempCutoffValue(self.cutoff_input.text())
     
 
 if __name__ == "__main__":
     app = QtWidgets.QApplication(sys.argv)
     TempDetails = QtWidgets.QDialog()
-    ui = Ui_TempDetails()
-    ui.setupUi(TempDetails)
-    TempDetails.show()
+    emptydf = pd.DataFrame(columns= ["Time", "Temp", "Distance"])
+    ui = Ui_TempDetails(emptydf)
+    
+
+
     sys.exit(app.exec_())

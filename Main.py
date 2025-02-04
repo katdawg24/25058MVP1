@@ -3,25 +3,29 @@ import SerialWorker
 import pandas as pd
 
 class Main(object):
+    
+    def __init__(self):
+        self.temp_cutoff = 30
+        self.distance_cutoff = 100000
+
     def setUp(self):
         self.df = pd.DataFrame(columns= ["Time", "Temp", "Distance"])
 
-        self.serial_thread = SerialWorker.SerialWorker('COM5', 9600)
-        self.serial_thread.start()
-        self.serial_thread.data_received.connect(self.processData)
+        self.receive_serial_thread = SerialWorker.SerialWorker('COM5', 9600)
+        self.receive_serial_thread.start()
+        self.receive_serial_thread.data_received.connect(self.processData)
 
-        # self.serial_thread2 = SerialWorker.SerialWorker('COM5', 9600)
-        # self.serial_thread2.start()
-        # self.serial_thread.data_received.connect(self.processData2)
+        self.send_serial_thread = SerialWorker.SerialWorker('COM3', 9600)
 
-        self.main_window = MainWindow.Ui_MainWindow(self.serial_thread)
+        self.main_window = MainWindow.Ui_MainWindow(self.receive_serial_thread, self.send_serial_thread)
 
     def processData(self, data):
-        
         self.df.loc[len(self.df)] = [float(data[0]), float(data[1]), float(data[2])]
         
-    def processData2(self, data):
-        data = data
+    
+
+
+        
 
 if __name__ == "__main__":
     main = Main()
